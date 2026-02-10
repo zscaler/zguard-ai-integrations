@@ -1,0 +1,7 @@
+# Zscaler AI Guard Claude Code Hooks - Dependencies
+
+# Zscaler SDK Python (includes AIGuard/ZGuard client)
+zscaler-sdk-python>=1.0.0
+
+# Alternative: Install directly from source
+# pip install git+https://github.com/zscaler/zscaler-sdk-python.git

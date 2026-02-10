@@ -1,0 +1,241 @@
+{
+  "name": "AIGuard_Secure_AI_Chatbot",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "When chat message received",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "userMessage",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "Extract User Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [220, 0],
+      "id": "extract-message"
+    },
+    {
+      "parameters": {
+        "operation": "scanPrompt",
+        "content": "={{ $json.userMessage }}"
+      },
+      "name": "AI Guard: Scan Prompt",
+      "type": "@zscaler/n8n-nodes-aiguard.aiGuard",
+      "typeVersion": 1,
+      "position": [440, 0],
+      "id": "scan-prompt",
+      "credentials": {
+        "aiGuardApi": {
+          "name": "AI Guard Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "BLOCK",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "name": "Prompt Blocked?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [660, 0],
+      "id": "check-prompt-blocked"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "response",
+              "value": "Your message was blocked by our security policy. Reason: {{ $json.detectors.join(', ') }}",
+              "type": "string"
+            },
+            {
+              "name": "blocked",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "name": "Return Block Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [880, -100],
+      "id": "return-block"
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "create",
+        "modelId": "gpt-4",
+        "messages": {
+          "values": [
+            {
+              "role": "user",
+              "content": "={{ $json.userMessage }}"
+            }
+          ]
+        }
+      },
+      "name": "OpenAI: Generate Response",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [880, 100],
+      "id": "openai-call",
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAI Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "scanResponse",
+        "content": "={{ $json.message.content }}"
+      },
+      "name": "AI Guard: Scan Response",
+      "type": "@zscaler/n8n-nodes-aiguard.aiGuard",
+      "typeVersion": 1,
+      "position": [1100, 100],
+      "id": "scan-response",
+      "credentials": {
+        "aiGuardApi": {
+          "name": "AI Guard Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "BLOCK",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "name": "Response Blocked?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1320, 100],
+      "id": "check-response-blocked"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "response",
+              "value": "The AI response contained sensitive information and was blocked. Transaction ID: {{ $json.transactionId }}",
+              "type": "string"
+            },
+            {
+              "name": "blocked",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "name": "Return Response Block",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1540, 0],
+      "id": "return-response-block"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "response",
+              "value": "={{ $json.message.content }}",
+              "type": "string"
+            },
+            {
+              "name": "blocked",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "name": "transactionId",
+              "value": "={{ $json.transactionId }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "Return Safe Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1540, 200],
+      "id": "return-safe-response"
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [[{"node": "Extract User Message", "type": "main", "index": 0}]]
+    },
+    "Extract User Message": {
+      "main": [[{"node": "AI Guard: Scan Prompt", "type": "main", "index": 0}]]
+    },
+    "AI Guard: Scan Prompt": {
+      "main": [[{"node": "Prompt Blocked?", "type": "main", "index": 0}]]
+    },
+    "Prompt Blocked?": {
+      "main": [
+        [{"node": "Return Block Message", "type": "main", "index": 0}],
+        [{"node": "OpenAI: Generate Response", "type": "main", "index": 0}]
+      ]
+    },
+    "OpenAI: Generate Response": {
+      "main": [[{"node": "AI Guard: Scan Response", "type": "main", "index": 0}]]
+    },
+    "AI Guard: Scan Response": {
+      "main": [[{"node": "Response Blocked?", "type": "main", "index": 0}]]
+    },
+    "Response Blocked?": {
+      "main": [
+        [{"node": "Return Response Block", "type": "main", "index": 0}],
+        [{"node": "Return Safe Response", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-01-30T00:00:00.000Z",
+  "versionId": "1"
+}

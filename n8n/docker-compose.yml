@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n-aiguard-dev
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom
+    volumes:
+      # Mount n8n data directory (workflows, credentials, etc)
+      - n8n_data:/home/node/.n8n
+      # Mount the package source for installation
+      - ./:/mnt/n8n-aiguard:ro
+      # Mount init script
+      - ./docker-init.sh:/docker-init.sh:ro
+    entrypoint: ["/bin/sh", "/docker-init.sh"]
+
+volumes:
+  n8n_data:
+    name: n8n_data

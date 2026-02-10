@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+  <HTTPProxyConnection>
+    <BasePath>/vertex</BasePath>
+  </HTTPProxyConnection>
+  
+  <PreFlow name="PreFlow">
+    <Request>
+      <!-- Step 1: Get configuration from KVM -->
+      <Step><Name>KVM-GetConfig</Name></Step>
+      
+      <!-- Step 2: Extract prompt from request -->
+      <Step><Name>JS-ScanPrompt</Name></Step>
+      
+      <!-- Step 3: Build AI Guard API request -->
+      <Step><Name>AM-AIGuardRequest</Name></Step>
+      
+      <!-- Step 4: Call AI Guard API -->
+      <Step><Name>SC-AIGuardScan</Name></Step>
+      
+      <!-- Step 5: Extract verdict from AI Guard response -->
+      <Step><Name>EV-AIGuardVerdict</Name></Step>
+      
+      <!-- Step 6: Block if AI Guard returned BLOCK -->
+      <Step>
+        <Name>RF-Block</Name>
+        <Condition>(aiguard.action = "BLOCK")</Condition>
+      </Step>
+    </Request>
+  </PreFlow>
+  
+  <PostFlow name="PostFlow">
+    <Response>
+      <!-- Step 7: Extract response from Vertex AI -->
+      <Step>
+        <Name>JS-ScanResponse</Name>
+        <Condition>(response.status.code >= 200) and (response.status.code &lt; 300)</Condition>
+      </Step>
+      
+      <!-- Step 8: Build AI Guard response scan request -->
+      <Step>
+        <Name>AM-AIGuardResponseRequest</Name>
+        <Condition>(response.status.code >= 200) and (response.status.code &lt; 300) and (aiguard.scan.response.payload != null)</Condition>
+      </Step>
+      
+      <!-- Step 9: Call AI Guard API for response scan -->
+      <Step>
+        <Name>SC-AIGuardResponseScan</Name>
+        <Condition>(response.status.code >= 200) and (response.status.code &lt; 300) and (aiguard.scan.response.payload != null)</Condition>
+      </Step>
+      
+      <!-- Step 10: Extract response verdict -->
+      <Step>
+        <Name>EV-AIGuardResponseVerdict</Name>
+        <Condition>(response.status.code >= 200) and (response.status.code &lt; 300) and (aiguard.scan.response.payload != null)</Condition>
+      </Step>
+      
+      <!-- Step 11: Block if response contains sensitive data -->
+      <Step>
+        <Name>RF-BlockResponse</Name>
+        <Condition>(aiguard.scan.response.action = "BLOCK")</Condition>
+      </Step>
+    </Response>
+  </PostFlow>
+  
+  <RouteRule name="default">
+    <TargetEndpoint>vertex-target</TargetEndpoint>
+  </RouteRule>
+</ProxyEndpoint>

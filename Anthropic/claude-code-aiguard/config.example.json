@@ -1,0 +1,6 @@
+{
+    "api_key": "your_api_key_here",
+    "cloud": "us1",
+    "policy_id": 760,
+    "timeout": 30
+}

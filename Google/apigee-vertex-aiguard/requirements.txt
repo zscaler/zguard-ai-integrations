@@ -1,0 +1,7 @@
+# Deployment dependencies
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Optional: For enhanced Google Cloud integration
+# google-cloud-apigee>=1.0.0
+# google-auth>=2.0.0

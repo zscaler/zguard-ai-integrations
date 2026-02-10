@@ -1,0 +1,54 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/aiguard/scan_user_input.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "WebFetch|WebSearch|web_search",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/aiguard/scan_url.py"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*__read.*|mcp__.*__resource.*|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/aiguard/scan_mcp_request.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "WebFetch|WebSearch|web_search",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/aiguard/scan_response.py"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*__read.*|mcp__.*__resource.*|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/aiguard/scan_response.py"
+          }
+        ]
+      }
+    ]
+  }
+}

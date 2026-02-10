@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RaiseFault name="RF-BlockResponse">
+  <FaultResponse>
+    <Set>
+      <StatusCode>403</StatusCode>
+      <ReasonPhrase>Forbidden</ReasonPhrase>
+      <Payload contentType="application/json">{"error":"🛡️ ZSCALER AI GUARD: RESPONSE BLOCKED","severity":"{aiguard.scan.response.severity}","transaction_id":"{aiguard.scan.response.transaction.id}"}</Payload>
+    </Set>
+  </FaultResponse>
+</RaiseFault>

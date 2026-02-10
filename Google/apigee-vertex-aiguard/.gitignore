@@ -1,0 +1,12 @@
+# Environment files
+.env
+
+# Generated files
+vertex-aiguard.zip
+
+# Service account keys
+*.json
+!example.json
+
+# Logs
+*.log

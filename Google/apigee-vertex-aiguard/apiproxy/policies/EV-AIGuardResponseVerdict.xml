@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables name="EV-AIGuardResponseVerdict">
+  <Source>aiguard.response.scan</Source>
+  <JSONPayload>
+    <Variable name="aiguard.scan.response.action" type="string">
+      <JSONPath>$.action</JSONPath>
+    </Variable>
+    <Variable name="aiguard.scan.response.severity" type="string">
+      <JSONPath>$.severity</JSONPath>
+    </Variable>
+    <Variable name="aiguard.scan.response.transaction.id" type="string">
+      <JSONPath>$.transactionId</JSONPath>
+    </Variable>
+  </JSONPayload>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</ExtractVariables>

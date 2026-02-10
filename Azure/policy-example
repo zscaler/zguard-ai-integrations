@@ -1,0 +1,77 @@
+<policies>
+    <inbound>
+        <base />
+        <!-- Backend LLM service (Azure OpenAI, OpenAI, etc.) -->
+        <set-backend-service id="apim-generated-policy" backend-id="my-llm-openai-endpoint" />
+        
+        <!-- Optional: Custom error messages for each detector -->
+        <set-variable name="aiguardDescriptions" value="@{
+            return new JObject(
+                new JProperty("toxicity", "Your content violates our acceptable use policy."),
+                new JProperty("injection", "Security threat detected. Request blocked for your protection."),
+                new JProperty("pii", "Personal information detected. Please remove sensitive data."),
+                new JProperty("secrets", "API keys or credentials detected and blocked."),
+                new JProperty("gibberish", "Unable to process invalid or encoded input."),
+                new JProperty("malicious_url", "Malicious or blocked URL detected."),
+                new JProperty("off_topic", "Content outside allowed scope for this service."),
+                new JProperty("competition", "Questions about competitors are not permitted."),
+                new JProperty("data_leakage", "Unauthorized data disclosure detected.")
+            );
+        }" />
+        
+        <!-- Optional: Fail-open mode (allow traffic if AI Guard unavailable) -->
+        <!-- Set to 'false' for fail-closed (recommended for production) -->
+        <set-variable name="FailOpen" value="true" />
+        
+        <!-- Optional: Custom application name for logging -->
+        <set-variable name="appName" value="ProductionGateway" />
+        
+        <!-- Recommended: Specific policy ID for prompts -->
+        <!-- If not set, will use AIGUARD-POLICY-ID named value or auto-resolve -->
+        <set-variable name="currentPolicy" value="760" />
+        
+        <!-- Mandatory: Indicate this is prompt scanning -->
+        <set-variable name="ScanType" value="prompt" />
+        
+        <!-- Include the AI Guard scanning fragment -->
+        <include-fragment fragment-id="zscaler-aiguard-scan" />
+    </inbound>
+    
+    <backend>
+        <base />
+    </backend>
+    
+    <outbound>
+        <base />
+        
+        <!-- Optional: Fail-closed for responses (stricter) -->
+        <set-variable name="FailOpen" value="false" />
+        
+        <!-- Recommended: Specific policy ID for responses -->
+        <!-- Can be different from prompt policy if needed -->
+        <set-variable name="currentPolicy" value="760" />
+        
+        <!-- Mandatory: Indicate this is response scanning -->
+        <set-variable name="ScanType" value="response" />
+        
+        <!-- Include the AI Guard scanning fragment -->
+        <include-fragment fragment-id="zscaler-aiguard-scan" />
+    </outbound>
+    
+    <on-error>
+        <base />
+        <!-- Optional: Custom error handling -->
+        <return-response>
+            <set-status code="500" reason="Internal Server Error" />
+            <set-header name="Content-Type" exists-action="override">
+                <value>application/json</value>
+            </set-header>
+            <set-body>@{
+                return new JObject(
+                    new JProperty("error", "An error occurred processing your request"),
+                    new JProperty("request_id", context.RequestId)
+                ).ToString();
+            }</set-body>
+        </return-response>
+    </on-error>
+</policies>

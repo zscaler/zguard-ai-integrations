@@ -1,0 +1,98 @@
+{
+  "name": "@zscaler/n8n-nodes-aiguard",
+  "version": "1.0.0",
+  "description": "n8n community node for Zscaler AI Guard (AI Runtime Security) API integration",
+  "keywords": [
+    "n8n-community-node-package",
+    "zscaler",
+    "aiguard",
+    "ai-security",
+    "ai-guard",
+    "security-scanning",
+    "ai-runtime-security",
+    "guardrails"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/zscaler/zguard-ai-integrations",
+  "author": {
+    "name": "Zscaler",
+    "email": "support@zscaler.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zscaler/zguard-ai-integrations.git"
+  },
+  "engines": {
+    "node": ">=18.10",
+    "npm": ">=8.19"
+  },
+  "packageManager": "npm@9.6.4",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "format": "prettier nodes credentials --write",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "npm run build && npm run lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/AIGuardApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/AIGuard/AIGuard.node.js"
+    ]
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^18.19.119",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-n8n-nodes-base": "^1.16.1",
+    "gulp": "^4.0.2",
+    "jest": "^29.7.0",
+    "n8n-workflow": "^1.82.0",
+    "prettier": "^3.2.5",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/nodes",
+      "<rootDir>/credentials"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.ts",
+      "**/?(*.)+(spec|test).ts"
+    ],
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.ts",
+      "!**/*.d.ts",
+      "!**/node_modules/**",
+      "!**/dist/**"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "n8n-custom-nodes",
+  "version": "1.0.0",
+  "description": "Custom nodes for n8n",
+  "dependencies": {
+    "@zscaler/n8n-nodes-aiguard": "file:/data/@zscaler/n8n-nodes-aiguard"
+  }
+}

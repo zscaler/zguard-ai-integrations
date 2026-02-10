@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy name="vertex-aiguard">
+  <Description>Vertex AI proxy with Zscaler AI Guard security scanning</Description>
+</APIProxy>
