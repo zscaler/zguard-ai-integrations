@@ -1,0 +1,15 @@
+# INPUT RAILS
+
+define flow zscaler aiguard inspect prompt
+  $result = execute CallZscalerAiGuardAction(prompt=$user_message)
+  if $result[blocked]
+    bot refuse to respond
+    stop
+
+# OUTPUT RAILS
+
+define flow zscaler aiguard inspect response
+  $result = execute CallZscalerAiGuardAction(response=$bot_message)
+  if $result[blocked]
+    bot refuse to respond
+    stop

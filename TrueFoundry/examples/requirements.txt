@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+zscaler-sdk-python
+requests
+python-dotenv

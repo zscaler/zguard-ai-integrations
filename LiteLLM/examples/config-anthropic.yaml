@@ -1,0 +1,14 @@
+# litellm config.yaml — Anthropic + Zscaler AI Guard
+
+model_list:
+  - model_name: claude-sonnet
+    litellm_params:
+      model: anthropic/claude-sonnet-4-5-20250929
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+general_settings:
+  master_key: "os.environ/LITELLM_MASTER_KEY"
+
+litellm_settings:
+  drop_params: true
+  callbacks: ["aiguard_guardrail.proxy_handler_instance"]

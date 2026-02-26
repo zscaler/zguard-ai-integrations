@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: litellm
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: litellm
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  litellm:
+    build: .
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - AIGUARD_API_KEY=${AIGUARD_API_KEY}
+      - AIGUARD_CLOUD=${AIGUARD_CLOUD:-us1}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-1234}
+      - DATABASE_URL=postgresql://litellm:litellm@db:5432/litellm
+    volumes:
+      - ./config-anthropic.yaml:/app/config.yaml
+      - ./aiguard_guardrail.py:/app/aiguard_guardrail.py
+    command: ["--config", "/app/config.yaml", "--detailed_debug"]
+
+volumes:
+  pgdata:

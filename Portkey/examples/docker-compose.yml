@@ -1,0 +1,6 @@
+services:
+  portkey-gateway:
+    image: portkeyai/gateway:latest
+    ports:
+      - "8787:8787"
+    restart: unless-stopped

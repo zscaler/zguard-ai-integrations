@@ -1,0 +1,29 @@
+# litellm config.yaml — All providers + Zscaler AI Guard guardrails
+
+model_list:
+  - model_name: gpt-4o
+    litellm_params:
+      model: azure/gpt-4o
+      api_base: os.environ/AZURE_API_BASE
+      api_key: "os.environ/AZURE_API_KEY"
+      api_version: "2025-01-01-preview"
+  - model_name: claude-3-haiku
+    litellm_params:
+      model: "bedrock/anthropic.claude-3-haiku-20240307-v1:0"
+      aws_access_key_id: "os.environ/AWS_ACCESS_KEY_ID"
+      aws_secret_access_key: "os.environ/AWS_SECRET_ACCESS_KEY"
+      aws_region_name: "os.environ/AWS_REGION_NAME"
+
+  - model_name: titan-text-lite
+    litellm_params:
+      model: "bedrock/amazon.titan-text-lite-v1"
+      aws_access_key_id: "os.environ/AWS_ACCESS_KEY_ID"
+      aws_secret_access_key: "os.environ/AWS_SECRET_ACCESS_KEY"
+      aws_region_name: "os.environ/AWS_REGION_NAME"
+
+general_settings:
+  admin_key: "os.environ/LITELLM_ADMIN_KEY"
+
+litellm_settings:
+  drop_params: true
+  callbacks: ["aiguard_guardrail.proxy_handler_instance"]

@@ -1,0 +1,9 @@
+services:
+  aiguard-guardrail:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - AIGUARD_API_KEY=${AIGUARD_API_KEY}
+      - AIGUARD_CLOUD=${AIGUARD_CLOUD:-us1}
+    restart: unless-stopped
