@@ -47,10 +47,29 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed explanation.
 |----------|------|--------|---------------|
 | **Claude Code** | Hooks (Python) | ✅ Prototype Complete | [Guide](./Anthropic/claude-code-aiguard/) |
 | **Azure AI Gateway** | APIM Policy | ✅ Prototype Complete | [Guide](./Azure/) |
+| **Cursor IDE** | Hooks (Python) | ✅ Complete | [Guide](./Cursor/) |
+| **Cline** | VS Code hooks (Python) | ✅ Complete | [Guide](./Cline/) |
+| **Windsurf** | Cascade hooks (Python) | ✅ Complete | [Guide](./Windsurf/) |
+| **GitHub Actions** | CI/CD Pipeline (Python) | ✅ Complete | [Guide](./github-actions/) |
+| **Jenkins** | Declarative Pipeline (Python) | ✅ Complete | [Guide](./Jenkins/declarative-pipeline/) |
 | **Google Apigee X** | API Proxy | ✅ Complete | [Guide](./Google/apigee-vertex-aiguard/) |
-| Cursor IDE | Hooks | 🚧 Planned | - |
 | LiteLLM Gateway | Callbacks | 🚧 Planned | - |
 | LangChain | Callbacks | 🚧 Planned | - |
+
+## Makefile and weekly CI
+
+From the repository root:
+
+| Command | Purpose |
+|---------|---------|
+| `make help` | List all targets |
+| `make test-compile` | Python syntax check for Anthropic, Cursor, Cline, Windsurf hooks and CI scripts (**no API**) |
+| `make test-policy-gha` | AI Guard scan using `github-actions/` (needs **`AIGUARD_API_KEY`** in the environment) |
+| `make test-policy-jenkins` | Same scan using `Jenkins/declarative-pipeline/` (parity check) |
+| `make test-cursor` / `test-cline` / `test-windsurf` | Run `local_dev/*/test_*.sh` samples (**API**) |
+| `make test-all` | Compile + both policy scans + hook sample scripts |
+
+**Scheduled GitHub Actions:** [`.github/workflows/weekly-integrations.yml`](./.github/workflows/weekly-integrations.yml) runs **Mondays 16:00 UTC** (08:00 **PST**; during **PDT** that is ~09:00 Los Angeles). It runs `make test-compile`, then two policy scans (`github-actions` and `Jenkins` configs). Set repository secrets **`AIGUARD_API_KEY`**, and optionally **`AIGUARD_CLOUD`**, **`AIGUARD_POLICY_ID`**. Use **Actions → Weekly integration checks → Run workflow** for a manual run.
 
 ## Quick Start
 
@@ -75,6 +94,82 @@ cp Anthropic/claude-code-aiguard/settings.json ~/.claude/settings.json
 ```
 
 See [Claude Code Guide](./Anthropic/claude-code-aiguard/README.md) for details.
+
+### Cursor IDE Integration
+
+For developers using Cursor IDE:
+
+```bash
+# 1. Install Python dependencies
+pip install zscaler-sdk-python python-dotenv
+
+# 2. Copy hooks into your project
+mkdir -p .cursor
+cp path/to/zguard-ai-integrations/Cursor/.cursor/hooks.json .cursor/hooks.json
+cp -r path/to/zguard-ai-integrations/Cursor/hooks Cursor/hooks
+
+# 3. Configure environment
+export AIGUARD_API_KEY="your-aiguard-api-key"
+# Or copy example.env to .env in your project root
+
+# 4. Restart Cursor
+```
+
+See [Cursor Guide](./Cursor/README.md) for details.
+
+### Cline (VS Code) integration
+
+```bash
+cd Cline && pip install -r requirements.txt
+cp Cline/.env.example Cline/.env   # or use repo root .env
+chmod +x Cline/.clinerules/hooks/UserPromptSubmit Cline/.clinerules/hooks/PreToolUse \
+         Cline/.clinerules/hooks/PostToolUse Cline/.clinerules/hooks/TaskComplete
+```
+
+See [Cline Guide](./Cline/README.md) for hook coverage and limitations.
+
+### Windsurf integration
+
+```bash
+cd Windsurf && pip install -r requirements.txt
+# Ensure Windsurf/.env has AIGUARD_API_KEY (.env.example is optional template)
+# Open the Windsurf/ folder as the workspace in Windsurf IDE
+```
+
+See [Windsurf Guide](./Windsurf/README.md) for pre vs post hook blocking limits.
+
+### GitHub Actions CI/CD Integration
+
+For CI/CD policy validation before deploying AI applications:
+
+```bash
+# 1. Add GitHub Secrets
+#    AIGUARD_API_KEY — Your AI Guard API key
+#    AIGUARD_CLOUD   — Cloud region (optional, default: us1)
+
+# 2. Copy the workflow and scripts into your repo
+cp -r path/to/zguard-ai-integrations/github-actions/.github .github
+cp -r path/to/zguard-ai-integrations/github-actions/scripts scripts
+cp -r path/to/zguard-ai-integrations/github-actions/config config
+
+# 3. Define test cases in config/test-prompts.yaml
+# 4. Push — the workflow runs automatically
+```
+
+See [GitHub Actions Guide](./github-actions/README.md) for details.
+
+### Jenkins CI/CD Integration
+
+For policy validation on a Jenkins controller:
+
+```bash
+# 1. Create credential aiguard-api-key (Secret text) = AI Guard API key
+# 2. Copy declarative-pipeline/ into your repo (or use this repo) and point the job at that directory
+# 3. Edit config/test-prompts.yaml — same format as GitHub Actions
+# 4. Build with Parameters: use FORCE_RUN on first run if no SCM diff is detected
+```
+
+See [Jenkins Guide](./Jenkins/declarative-pipeline/README.md) for credential IDs, monitored paths, and optional Vertex deploy stages.
 
 ### Azure AI Gateway Integration
 
@@ -203,6 +298,11 @@ View: Full scan details, triggered detectors, content samples
 [2026-01-30 15:30:00] BLOCKED USER INPUT: severity=CRITICAL policy=policy_760 detectors=[toxicity] (txn:abc123...)
 ```
 
+**Cursor IDE**: `Cursor/hooks/aiguard.log`
+```
+[2026-01-30 15:30:00] BLOCKED USER PROMPT: severity=CRITICAL policy=Default_Policy detectors=[toxicity] (txn:abc123...)
+```
+
 **Azure APIM**: Azure Monitor / Application Insights
 ```
 403 Forbidden responses
@@ -219,6 +319,11 @@ Error rates
 ### Platform-Specific Docs
 
 - **[Claude Code](./Anthropic/claude-code-aiguard/README.md)** - Detailed installation
+- **[Cursor IDE](./Cursor/README.md)** - Cursor hooks integration
+- **[Cline](./Cline/README.md)** - Cline VS Code hooks
+- **[Windsurf](./Windsurf/README.md)** - Windsurf Cascade hooks
+- **[GitHub Actions](./github-actions/README.md)** - CI/CD policy validation
+- **[Jenkins](./Jenkins/declarative-pipeline/README.md)** - Declarative pipeline policy validation
 - **[Azure APIM](./Azure/README.md)** - Azure AI Gateway integration
 - **[Azure Installation](./Azure/INSTALLATION_GUIDE.md)** - Step-by-step guide
 
@@ -256,7 +361,11 @@ curl -X POST "https://your-gateway/chat/completions" \
 
 Contributions welcome! Particularly interested in:
 
-- [ ] Cursor IDE integration
+- [x] Cursor IDE integration
+- [x] Cline VS Code hooks
+- [x] Windsurf Cascade hooks
+- [x] GitHub Actions CI/CD pipeline
+- [x] Jenkins Declarative Pipeline
 - [ ] LiteLLM gateway callbacks
 - [ ] LangChain middleware
 - [ ] Google Apigee policies

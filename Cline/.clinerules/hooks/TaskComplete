@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""Cline TaskComplete — AI Guard audit scan (direction OUT); always non-blocking."""
+
+from __future__ import annotations
+
+import json
+import sys
+
+from aiguard_utils import (
+    MAX_POST_CHARS,
+    get_client_config,
+    log_message,
+    respond_json,
+    scan_content,
+    truncate_text,
+)
+
+
+def main() -> int:
+    try:
+        data = json.loads(sys.stdin.read() or "{}")
+    except json.JSONDecodeError:
+        respond_json(False)
+        return 0
+
+    tc = data.get("taskComplete") or {}
+    task = tc.get("task") or ""
+    if len(task) < 5:
+        respond_json(False)
+        return 0
+
+    if not get_client_config().get("api_key"):
+        respond_json(False)
+        return 0
+
+    text = truncate_text(task, MAX_POST_CHARS)
+    log_message(f"TaskComplete: audit scan ({len(text)} chars)")
+
+    r = scan_content(text, "OUT")
+    if r.get("error"):
+        log_message(f"TaskComplete: API error (audit only): {r['error']}")
+        respond_json(False)
+        return 0
+
+    action = r.get("action") or "ALLOW"
+    det = r.get("triggered_detectors") or []
+    bd = ",".join(r.get("blocking_detectors") or [])
+    txn = r.get("transaction_id") or "unknown"
+
+    if action == "BLOCK":
+        log_message(
+            f"ALERT TaskComplete: would-block policy={r.get('policy_name')} "
+            f"detectors=[{bd}] txn={txn} — hook cannot cancel (Cline limitation)"
+        )
+    elif det:
+        log_message(f"TaskComplete: detected=[{','.join(det)}] txn={txn}")
+
+    respond_json(False)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

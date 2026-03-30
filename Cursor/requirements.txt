@@ -1,0 +1,3 @@
+# Cursor hooks — Zscaler AI Guard (same stack as Anthropic Claude Code integration)
+zscaler-sdk-python>=0.1.0
+python-dotenv>=1.0.0

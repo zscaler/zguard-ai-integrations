@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [
+      {"command": "python3 Cursor/hooks/pre_submit_prompt.py", "timeout": 5000, "failClosed": false}
+    ],
+    "beforeMCPExecution": [
+      {"command": "python3 Cursor/hooks/pre_mcp_execution.py", "timeout": 5000, "failClosed": false}
+    ],
+    "postToolUse": [
+      {"command": "python3 Cursor/hooks/scan_response.py", "timeout": 5000, "failClosed": false}
+    ],
+    "afterAgentResponse": [
+      {"command": "python3 Cursor/hooks/agent_response_scan.py", "timeout": 5000, "failClosed": false}
+    ]
+  }
+}

@@ -2,7 +2,10 @@
 Zscaler AI Guard Action for NeMo Guardrails
 
 Uses the zscaler-sdk-python to scan prompts and responses via the
-AI Guard DAS API (resolve-and-execute-policy).
+AI Guard DAS API.
+
+By default uses resolve-and-execute-policy (automatic policy selection).
+Set AIGUARD_POLICY_ID to use execute-policy with a specific policy.
 """
 
 import asyncio
@@ -35,6 +38,14 @@ class PolicyAction(str, Enum):
 CLOUD = os.environ.get("AIGUARD_CLOUD", "us1")
 
 _client: Optional[LegacyZGuardClientHelper] = None
+_policy_id: Optional[int] = None
+
+_env_policy_id = os.environ.get("AIGUARD_POLICY_ID")
+if _env_policy_id:
+    try:
+        _policy_id = int(_env_policy_id)
+    except ValueError:
+        log.warning("AIGUARD_POLICY_ID=%r is not a valid integer, ignoring", _env_policy_id)
 
 
 def _get_client() -> LegacyZGuardClientHelper:
@@ -53,11 +64,21 @@ def _get_attr(obj, name, default=None):
 def _scan_sync(content: str, direction: str, transaction_id: str | None = None):
     """Synchronous SDK call — will be run via asyncio.to_thread."""
     client = _get_client()
-    result, response, error = client.policy_detection.resolve_and_execute_policy(
-        content=content,
-        direction=direction,
-        transaction_id=transaction_id,
-    )
+
+    if _policy_id is not None:
+        result, response, error = client.policy_detection.execute_policy(
+            content=content,
+            direction=direction,
+            policy_id=_policy_id,
+            transaction_id=transaction_id,
+        )
+    else:
+        result, response, error = client.policy_detection.resolve_and_execute_policy(
+            content=content,
+            direction=direction,
+            transaction_id=transaction_id,
+        )
+
     if error:
         raise Exception(f"AI Guard API error: {error}")
     return result
