@@ -1,0 +1,156 @@
+name: AI Guard Policy Scan & Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'config/model-config.yaml'
+      - 'config/test-prompts.yaml'
+      - '.github/workflows/model-security-scan.yml'
+      - 'scripts/**'
+      - 'requirements.txt'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'config/model-config.yaml'
+      - 'config/test-prompts.yaml'
+      - '.github/workflows/model-security-scan.yml'
+      - 'scripts/**'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # Detect whether scan-relevant files changed (must stay in sync with on.push.paths).
+  # ---------------------------------------------------------------------------
+  detect-changes:
+    name: Detect Scan-Relevant Changes
+    runs-on: ubuntu-latest
+    outputs:
+      scan_relevant: ${{ steps.filter.outputs.scan }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            scan:
+              - 'config/model-config.yaml'
+              - 'config/test-prompts.yaml'
+              - '.github/workflows/model-security-scan.yml'
+              - 'scripts/**'
+              - 'requirements.txt'
+
+  # ---------------------------------------------------------------------------
+  # Zscaler AI Guard Integration — Policy Validation Scan
+  #
+  # Runs test prompts against the AI Guard API to verify security policies
+  # produce the expected ALLOW/BLOCK/DETECT outcomes. Exits non-zero if
+  # any test case fails, blocking deployment.
+  #
+  # Uses zscaler-sdk-python (LegacyZGuardClient) — the same SDK used by
+  # the Anthropic, Cursor, and other integrations in this repository.
+  #
+  # Required secrets:
+  #   AIGUARD_API_KEY   — Zscaler AI Guard API key (Bearer token)
+  #
+  # Optional secrets:
+  #   AIGUARD_CLOUD     — Cloud region (default: us1)
+  #   AIGUARD_POLICY_ID — Specific policy ID (auto-resolved if omitted)
+  # ---------------------------------------------------------------------------
+  security-scan:
+    name: Zscaler AI Guard Policy Validation
+    needs: detect-changes
+    if: needs.detect-changes.outputs.scan_relevant == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Zscaler AI Guard Policy Validation
+        env:
+          AIGUARD_API_KEY: ${{ secrets.AIGUARD_API_KEY }}
+          AIGUARD_CLOUD: ${{ secrets.AIGUARD_CLOUD }}
+          AIGUARD_POLICY_ID: ${{ secrets.AIGUARD_POLICY_ID }}
+        run: python scripts/scan_policy.py --config config/test-prompts.yaml
+
+  # ---------------------------------------------------------------------------
+  # Customer-specific: Deploy the model to Google Cloud Vertex AI.
+  # Replace this job with your own deployment logic (e.g., AWS SageMaker,
+  # Azure ML, on-prem infrastructure, etc.).
+  # Only runs on main branch pushes or manual triggers, after a passing scan.
+  #
+  # GitHub does not allow `secrets` in job-level `if:` — gate deploy with a repo
+  # variable instead. Set Actions variable ENABLE_VERTEX_DEPLOY=true and add
+  # GCP_* secrets when you want Vertex jobs to run.
+  # ---------------------------------------------------------------------------
+  deploy-model:
+    name: Deploy Model to Vertex AI
+    needs: security-scan
+    if: >
+      vars.ENABLE_VERTEX_DEPLOY == 'true' &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Deploy Model to Vertex AI
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ secrets.GCP_REGION }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python scripts/deploy_model.py
+
+  # ---------------------------------------------------------------------------
+  # Customer-specific: Validate the deployed endpoint by sending a test prompt.
+  # Replace with your own smoke tests or integration tests.
+  # ---------------------------------------------------------------------------
+  test-model:
+    name: Test Model Endpoint
+    needs: deploy-model
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Test Model Endpoint
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ secrets.GCP_REGION }}
+        run: python scripts/test_model.py --config config/model-config.yaml

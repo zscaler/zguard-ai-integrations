@@ -83,3 +83,5 @@ test: add validation scripts for [Platform]
 | Kong | `Kong/custom-plugin/handler.lua` | Lua plugin (no SDK, raw HTTP) |
 | n8n | `n8n/nodes/AIGuard/AIGuard.node.ts` | TypeScript n8n node |
 | Anthropic | `Anthropic/claude-code-aiguard/hooks/` | Claude Code hooks system |
+| Cursor | `Cursor/hooks/aiguard_utils.py` | Python hooks (4 scripts, zscaler-sdk-python) |
+| GitHub Actions | `github-actions/scripts/scan_policy.py` | CI/CD policy validation (zscaler-sdk-python) |

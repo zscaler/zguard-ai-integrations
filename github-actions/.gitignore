@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+*.pyo
+# Never commit secrets — use GitHub Actions secrets / CI variables only
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*credentials*.json
+*service-account*.json
+gcp-sa-key.json
+*.log
+.terraform/
+terraform.tfstate*
+*.tfvars
+.DS_Store
+venv/
+.venv/
+*.egg-info/
+dist/
+build/

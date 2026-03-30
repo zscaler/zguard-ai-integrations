@@ -1,0 +1,184 @@
+// Zscaler AI Guard Policy Validation & Deploy Pipeline
+//
+// Validates AI Guard policies (prompt/response) via resolve-and-execute-policy
+// before deploying an example model to Google Cloud Vertex AI.
+//
+// Required Jenkins credentials (Manage Jenkins > Manage Credentials):
+//   - aiguard-api-key           (Secret text) — Zscaler AI Guard API key (Bearer)
+//
+// Optional — use build parameters AIGUARD_CLOUD / AIGUARD_POLICY_ID, or bind
+// additional Secret text credentials in the scan stage if you prefer.
+//
+// Vertex AI example (optional deploy stages):
+//   - gcp-sa-key, gcp-project-id, gcp-region, hf-token
+
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        timeout(time: 60, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    triggers {
+        pollSCM('H/5 * * * *')
+    }
+
+    parameters {
+        booleanParam(
+            name: 'FORCE_RUN',
+            defaultValue: false,
+            description: 'Run the pipeline even if monitored config files have not changed'
+        )
+        booleanParam(
+            name: 'SKIP_DEPLOY',
+            defaultValue: false,
+            description: 'Run AI Guard policy scan only, skip Vertex AI deployment'
+        )
+        string(
+            name: 'AIGUARD_CLOUD',
+            defaultValue: 'us1',
+            description: 'Zscaler AI Guard cloud (us1, us2, eu1, …). Leave empty in UI to use default us1 from script.'
+        )
+        string(
+            name: 'AIGUARD_POLICY_ID',
+            defaultValue: '',
+            description: 'Optional numeric policy ID; if set, uses execute-policy instead of resolve-and-execute-policy'
+        )
+    }
+
+    environment {
+        CONFIG_FILE = 'config/model-config.yaml'
+        TEST_PROMPTS_FILE = 'config/test-prompts.yaml'
+    }
+
+    stages {
+
+        stage('Detect Changes') {
+            steps {
+                script {
+                    env.SCAN_NEEDED = 'false'
+                    def scanPaths = [
+                        'config/model-config.yaml',
+                        'config/test-prompts.yaml',
+                        'scripts/scan_policy.py',
+                        'Jenkinsfile',
+                    ]
+
+                    if (params.FORCE_RUN) {
+                        echo 'FORCE_RUN enabled — skipping change detection.'
+                        env.SCAN_NEEDED = 'true'
+                        return
+                    }
+
+                    def changes = currentBuild.changeSets.collectMany {
+                        it.items.collectMany { item ->
+                            item.affectedFiles.collect { it.path }
+                        }
+                    }
+                    if (changes.any { scanPaths.contains(it) }) {
+                        echo 'Monitored paths changed — running AI Guard policy scan.'
+                        env.SCAN_NEEDED = 'true'
+                    } else {
+                        echo 'No monitored changes. Use FORCE_RUN to scan anyway.'
+                    }
+                }
+            }
+        }
+
+        stage('Zscaler AI Guard Policy Validation') {
+            when {
+                expression { env.SCAN_NEEDED == 'true' }
+            }
+            steps {
+                withCredentials([
+                    string(credentialsId: 'aiguard-api-key', variable: 'AIGUARD_API_KEY'),
+                ]) {
+                    sh """
+                        echo "=== Setting up Python environment ==="
+                        python3 -m venv .venv
+                        . .venv/bin/activate
+
+                        echo "=== Installing dependencies ==="
+                        pip install --quiet -r requirements.txt
+
+                        echo "=== Running Zscaler AI Guard policy validation ==="
+                        export AIGUARD_CLOUD='${params.AIGUARD_CLOUD.trim() ?: "us1"}'
+                        export AIGUARD_POLICY_ID='${params.AIGUARD_POLICY_ID.trim()}'
+                        python scripts/scan_policy.py --config "${env.TEST_PROMPTS_FILE}"
+                    """
+                }
+            }
+        }
+
+        stage('Deploy Model to Vertex AI') {
+            when {
+                allOf {
+                    expression { env.SCAN_NEEDED == 'true' }
+                    expression { !params.SKIP_DEPLOY }
+                    expression { env.GIT_BRANCH == 'main' || env.GIT_BRANCH == 'origin/main' }
+                }
+            }
+            steps {
+                withCredentials([
+                    file(credentialsId: 'gcp-sa-key',      variable: 'GOOGLE_APPLICATION_CREDENTIALS'),
+                    string(credentialsId: 'gcp-project-id', variable: 'GCP_PROJECT_ID'),
+                    string(credentialsId: 'gcp-region',     variable: 'GCP_REGION'),
+                    string(credentialsId: 'hf-token',       variable: 'HF_TOKEN'),
+                ]) {
+                    sh '''
+                        echo "=== Authenticating with Google Cloud ==="
+                        gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
+                        gcloud config set project "${GCP_PROJECT_ID}"
+
+                        echo "=== Installing dependencies ==="
+                        . .venv/bin/activate
+                        pip install --quiet -r requirements.txt
+
+                        echo "=== Deploying Model ==="
+                        bash scripts/deploy_model.sh
+                    '''
+                }
+            }
+        }
+
+        stage('Test Model Endpoint') {
+            when {
+                allOf {
+                    expression { env.SCAN_NEEDED == 'true' }
+                    expression { !params.SKIP_DEPLOY }
+                    expression { env.GIT_BRANCH == 'main' || env.GIT_BRANCH == 'origin/main' }
+                }
+            }
+            steps {
+                withCredentials([
+                    file(credentialsId: 'gcp-sa-key',      variable: 'GOOGLE_APPLICATION_CREDENTIALS'),
+                    string(credentialsId: 'gcp-project-id', variable: 'GCP_PROJECT_ID'),
+                    string(credentialsId: 'gcp-region',     variable: 'GCP_REGION'),
+                ]) {
+                    sh '''
+                        echo "=== Authenticating with Google Cloud ==="
+                        gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
+
+                        echo "=== Testing Model Endpoint ==="
+                        . .venv/bin/activate
+                        python scripts/test_model.py --config ${CONFIG_FILE}
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed. Check the logs above for details.'
+        }
+        always {
+            sh 'rm -rf .venv || true'
+        }
+    }
+}

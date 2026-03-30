@@ -1,0 +1,80 @@
+# Weekly smoke checks for all Python-based integrations in this repository.
+#
+# Schedule: Monday 08:00 Pacific Standard Time (PST, UTC-8) → 16:00 UTC.
+# When US Pacific is on daylight time (PDT), this runs ~09:00 Los Angeles.
+#
+# Secrets (repository Settings → Secrets → Actions):
+#   AIGUARD_API_KEY — required for the policy scan job to pass
+#   AIGUARD_CLOUD   — optional
+#   AIGUARD_POLICY_ID — optional
+
+name: Weekly integration checks
+
+on:
+  schedule:
+    - cron: '0 16 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-integrations-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-compile:
+    name: Python syntax (hooks & scripts)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Syntax — Anthropic (Claude Code)
+        run: make compile-anthropic
+
+      - name: Syntax — Cursor
+        run: make compile-cursor
+
+      - name: Syntax — Cline
+        run: make compile-cline
+
+      - name: Syntax — Windsurf
+        run: make compile-windsurf
+
+      - name: Syntax — GitHub Actions
+        run: make compile-github-actions
+
+      - name: Syntax — Jenkins
+        run: make compile-jenkins
+
+  ai-guard-policy-scan:
+    name: AI Guard policy validation
+    needs: python-compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r github-actions/requirements.txt
+
+      - name: AI Guard policy — GitHub Actions
+        env:
+          AIGUARD_API_KEY: ${{ secrets.AIGUARD_API_KEY }}
+          AIGUARD_CLOUD: ${{ secrets.AIGUARD_CLOUD }}
+          AIGUARD_POLICY_ID: ${{ secrets.AIGUARD_POLICY_ID }}
+        run: make run-policy-gha
+
+      - name: AI Guard policy — Jenkins
+        env:
+          AIGUARD_API_KEY: ${{ secrets.AIGUARD_API_KEY }}
+          AIGUARD_CLOUD: ${{ secrets.AIGUARD_CLOUD }}
+          AIGUARD_POLICY_ID: ${{ secrets.AIGUARD_POLICY_ID }}
+        run: make run-policy-jenkins

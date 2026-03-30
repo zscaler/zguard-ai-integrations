@@ -1,0 +1,18 @@
+# Model / deployment configuration (Vertex AI example)
+#
+# Changing this file triggers the Jenkins pipeline scan stage (along with
+# config/test-prompts.yaml, scripts/scan_policy.py, and Jenkinsfile).
+#
+# The AI Guard policy suite is defined in config/test-prompts.yaml — not here.
+
+model:
+  huggingface_id: "google/gemma-3-1b-it"
+  display_name: "gemma-3-1b-it"
+  description: "Google Gemma 3 1B Instruction-Tuned model deployed via Vertex AI Model Garden"
+  version: "1.0"
+
+deployment:
+  machine_type: "g2-standard-12"
+  accelerator_type: "NVIDIA_L4"
+  accelerator_count: 1
+  region: "us-central1"

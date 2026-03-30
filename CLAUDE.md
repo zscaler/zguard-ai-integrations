@@ -11,14 +11,18 @@ Working code, configuration examples, and documentation for deploying Zscaler AI
 ```
 ├── Anthropic/          # Claude Code hooks (pre/post scan via hooks system)
 ├── Azure/              # Azure API Management policy integration
+├── Cursor/             # Cursor IDE hooks (beforeSubmitPrompt, beforeMCPExecution, postToolUse, afterAgentResponse)
+├── Cline/              # Cline VS Code hooks (UserPromptSubmit, PreToolUse, PostToolUse, TaskComplete)
+├── Windsurf/           # Windsurf Cascade hooks (pre/post prompt, command, MCP, cascade response)
 ├── Google/             # Google Apigee + Vertex AI proxy
 ├── Kong/               # Kong Gateway — Lua custom plugin & Konnect request callout
 ├── LiteLLM/            # LiteLLM proxy — Python custom callback (zscaler-sdk-python)
 ├── NemoGuardrails/     # NVIDIA NeMo Guardrails — custom action + library plugin (zscaler-sdk-python)
 ├── Portkey/            # Portkey AI Gateway — client-side SDK scanning (zscaler-sdk-python)
 ├── TrueFoundry/        # TrueFoundry — custom guardrail server via FastAPI (zscaler-sdk-python)
+├── github-actions/     # GitHub Actions CI/CD — policy validation pipeline (zscaler-sdk-python)
+├── Jenkins/            # Jenkins Declarative Pipeline — policy validation (zscaler-sdk-python)
 ├── n8n/                # n8n workflow automation — custom TypeScript node
-└── local_dev/          # Development artifacts, plugin staging, internal docs
 ```
 
 ### Integration Patterns
@@ -31,6 +35,10 @@ Working code, configuration examples, and documentation for deploying Zscaler AI
 | TypeScript gateway plugin | TypeScript | n8n, Portkey (native plugin) |
 | FastAPI guardrail server | Python | TrueFoundry |
 | Claude Code hooks | Python | Anthropic |
+| Cursor IDE hooks | Python | Cursor |
+| Cline IDE hooks | Python | Cline |
+| Windsurf Cascade hooks | Python | Windsurf |
+| CI/CD policy validation | Python | GitHub Actions, Jenkins |
 | API Management policy | XML/config | Azure APIM, Google Apigee |
 
 ### Per-Integration Details
@@ -39,12 +47,17 @@ Working code, configuration examples, and documentation for deploying Zscaler AI
 |-------------|:---:|:------:|:------------:|:-------------:|
 | Anthropic | ✅ | — | — | — |
 | Azure | — | — | — | — |
+| Cursor | ✅ | — | ✅ | Python hooks |
+| Cline | ✅ | — | — | Python hooks |
+| Windsurf | ✅ | — | — | Python hooks |
 | Google | ✅ | — | ✅ | — |
 | Kong | — | ✅ | ✅ | Lua plugin |
 | LiteLLM | ✅ | ✅ | ✅ | Callback |
 | NemoGuardrails | ✅ | — | — | Library plugin (PR-ready) |
 | Portkey | ✅ | ✅ | ✅ | TS plugin (PR-ready) |
 | TrueFoundry | ✅ | ✅ | ✅ | FastAPI server |
+| GitHub Actions | ✅ | — | ✅ | Policy validation |
+| Jenkins | ✅ | — | ✅ | Policy validation |
 | n8n | — | ✅ | — | TS node |
 
 ## Zscaler AI Guard API
@@ -109,6 +122,8 @@ test: add validation scripts for [Platform]
 | File | Purpose |
 |------|---------|
 | `README.md` | Integration index and overview |
+| `Makefile` | Local `make test-compile`, policy scans, hook sample scripts |
+| `.github/workflows/weekly-integrations.yml` | Weekly Monday CI: compile + dual policy scan |
 | `CLAUDE.md` | This file — project context for AI agents |
 | `.claude/agents.md` | Sub-agent instructions |
 | `local_dev/` | Development artifacts, plugin staging, internal docs |
