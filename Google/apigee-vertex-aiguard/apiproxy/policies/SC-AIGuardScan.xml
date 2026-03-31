@@ -4,6 +4,6 @@
   <Response>aiguard.response</Response>
   <Timeout>5000</Timeout>
   <HTTPTargetConnection>
-    <URL>https://api.{aiguard.cloud}.zseclipse.net/v1/detection/execute-policy</URL>
+    <URL>https://api.{aiguard.cloud}.zseclipse.net/v1/detection/resolve-and-execute-policy</URL>
   </HTTPTargetConnection>
 </ServiceCallout>

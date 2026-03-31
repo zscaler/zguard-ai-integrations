@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ServiceCallout name="SC-AIGuardResponseScan">
-  <Request variable="aiguard.response.request"/>
-  <Response>aiguard.response.scan</Response>
+  <Request variable="aiguardRespscanRequest"/>
+  <Response>aiguardRespscanResult</Response>
   <Timeout>6000</Timeout>
   <HTTPTargetConnection>
-    <URL>https://api.{aiguard.cloud}.zseclipse.net/v1/detection/execute-policy</URL>
+    <URL>https://api.{aiguard.cloud}.zseclipse.net/v1/detection/resolve-and-execute-policy</URL>
   </HTTPTargetConnection>
 </ServiceCallout>

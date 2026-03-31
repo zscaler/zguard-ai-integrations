@@ -22,15 +22,18 @@ try {
 
 // Get configuration
 var sessionId = context.getVariable('aiguard.session.id') || context.getVariable('messageid');
-var policyId = context.getVariable('request.header.X-AIGuard-Policy') || context.getVariable('private.aiguard.policyid') || '760';
+var policyId = context.getVariable('request.header.X-AIGuard-Policy') || context.getVariable('private.aiguard.policyid') || '';
 var cloud = context.getVariable('aiguard.cloud') || 'us1';
 
-// Build AI Guard API payload for response scan
+// Build AI Guard API payload for response scan (policyId optional — omit for auto-resolution)
 var payload = {
   content: responseText,
-  direction: 'OUT',
-  policyId: parseInt(policyId)
+  direction: 'OUT'
 };
+
+if (policyId && policyId.length > 0) {
+  payload.policyId = parseInt(policyId);
+}
 
 // Store variables
 context.setVariable('aiguard.scan.response.payload', JSON.stringify(payload));

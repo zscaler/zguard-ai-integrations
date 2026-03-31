@@ -4,7 +4,7 @@
     <Set>
       <StatusCode>403</StatusCode>
       <ReasonPhrase>Forbidden</ReasonPhrase>
-      <Payload contentType="application/json">{"error":"🛡️ ZSCALER AI GUARD: RESPONSE BLOCKED","severity":"{aiguard.scan.response.severity}","transaction_id":"{aiguard.scan.response.transaction.id}"}</Payload>
+      <Payload contentType="application/json">{"error":"ZSCALER AI GUARD: RESPONSE BLOCKED","severity":"{aiguard.scan.response.severity}","transaction_id":"{aiguard.scan.response.transaction.id}"}</Payload>
     </Set>
   </FaultResponse>
 </RaiseFault>

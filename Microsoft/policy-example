@@ -1,0 +1,40 @@
+<policies>
+    <inbound>
+        <base />
+        <set-backend-service id="apim-generated-policy" backend-id="my-llm-openai-endpoint" />
+        <!--Optional Entries -->
+        <set-variable name="aiguardDescriptions" value="@{
+                return new JObject(
+                    new JProperty("toxicity", "Your content violates our acceptable use policy."),
+                    new JProperty("injection", "Security threat detected. Request blocked for your protection."),
+                    new JProperty("pii", "Personal information detected. Please remove sensitive data."),
+                    new JProperty("secrets", "API keys or credentials detected and blocked."),
+                    new JProperty("gibberish", "Unable to process invalid or encoded input."),
+                    new JProperty("malicious_url", "Malicious or blocked URL detected."),
+                    new JProperty("off_topic", "Content outside allowed scope for this service."),
+                    new JProperty("competition", "Questions about competitors are not permitted."),
+                    new JProperty("data_leakage", "Unauthorized data disclosure detected.")
+                );
+            }" />
+        <set-variable name="FailOpen" value="true" />
+        <!--Optional: Specific policy ID (omit for auto-resolution) -->
+        <!-- <set-variable name="currentPolicy" value="760" /> -->
+        <!--Mandatory Entries -->
+        <set-variable name="ScanType" value="prompt" />
+        <include-fragment fragment-id="zscaler-aiguard-scan" />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+        <!--Optional Entries -->
+        <set-variable name="FailOpen" value="false" />
+        <!--Mandatory Entries -->
+        <set-variable name="ScanType" value="response" />
+        <include-fragment fragment-id="zscaler-aiguard-scan" />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
