@@ -1,7 +1,16 @@
+# litellm config.yaml — Azure OpenAI + Zscaler AI Guard (SDK callback)
+
 model_list:
   - model_name: gpt-4o
     litellm_params:
       model: azure/gpt-4o
       api_base: os.environ/AZURE_API_BASE
-      api_key: "os.environ/AZURE_API_KEY"
-      api_version: "2025-01-01-preview" # [OPTIONAL] litellm uses the latest azure api_version by default
+      api_key: os.environ/AZURE_API_KEY
+      api_version: "2025-01-01-preview"
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+litellm_settings:
+  drop_params: true
+  callbacks: ["aiguard_guardrail.proxy_handler_instance"]

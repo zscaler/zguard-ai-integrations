@@ -2,15 +2,19 @@
 Zscaler AI Guard Custom Callback for LiteLLM.
 
 Uses the zscaler-sdk-python to scan prompts (pre_call) and responses (post_call)
-via the AI Guard DAS API.
+via the AI Guard DAS API with automatic policy resolution.
 
 Required environment variables:
     AIGUARD_API_KEY   - Zscaler AI Guard API key
     AIGUARD_CLOUD     - Cloud region (default: us1)
+
+Note: LiteLLM now includes a native Zscaler AI Guard guardrail that requires
+no custom code. See: https://docs.litellm.ai/docs/proxy/guardrails/zscaler_ai_guard
+This SDK-based callback is an alternative that uses resolve-and-execute-policy
+for automatic policy resolution.
 """
 
 import asyncio
-import json
 import os
 import uuid
 
@@ -32,6 +36,7 @@ class ZscalerAIGuardCallback(CustomLogger):
         )
 
     def _extract_user_content(self, data: dict) -> str:
+        """Extract the last user message from the request."""
         messages = data.get("messages", [])
         for msg in reversed(messages):
             if msg.get("role") == "user":
@@ -45,7 +50,21 @@ class ZscalerAIGuardCallback(CustomLogger):
                 return str(content)
         return ""
 
+    def _extract_response_content(self, result) -> str:
+        """Extract text content from LLM response."""
+        try:
+            choices = result.get("choices", []) if isinstance(result, dict) else getattr(result, "choices", [])
+            for choice in choices:
+                message = choice.get("message", {}) if isinstance(choice, dict) else getattr(choice, "message", {})
+                content = message.get("content", "") if isinstance(message, dict) else getattr(message, "content", "")
+                if content:
+                    return str(content)
+        except Exception:
+            pass
+        return ""
+
     def _scan(self, content: str, direction: str, transaction_id: str | None = None):
+        """Call AI Guard resolve-and-execute-policy via SDK."""
         result, response, error = self.client.policy_detection.resolve_and_execute_policy(
             content=content,
             direction=direction,
@@ -102,6 +121,7 @@ class ZscalerAIGuardCallback(CustomLogger):
         return " | ".join(parts)
 
     async def async_pre_call_hook(self, user_api_key_dict, cache, data, call_type):
+        """Scan user prompt before sending to LLM (direction=IN)."""
         content = self._extract_user_content(data)
         if not content:
             return data
@@ -112,7 +132,6 @@ class ZscalerAIGuardCallback(CustomLogger):
         )
 
         result = await asyncio.to_thread(self._scan, content, "IN", transaction_id)
-
         action = self._get_attr(result, "action")
 
         verbose_proxy_logger.info(
@@ -121,10 +140,35 @@ class ZscalerAIGuardCallback(CustomLogger):
 
         if action and str(action).upper() != "ALLOW":
             msg = self._build_block_message(result)
-            verbose_proxy_logger.warning("AI Guard BLOCKED: %s", msg)
+            verbose_proxy_logger.warning("AI Guard BLOCKED (input): %s", msg)
             raise HTTPException(status_code=403, detail=msg)
 
         return data
+
+    async def async_post_call_success_hook(self, data, user_api_key_dict, response):
+        """Scan LLM response before returning to client (direction=OUT)."""
+        content = self._extract_response_content(response)
+        if not content:
+            return response
+
+        transaction_id = str(uuid.uuid4())
+        verbose_proxy_logger.info(
+            "AI Guard post_call scan (direction=OUT, txn=%s)", transaction_id
+        )
+
+        result = await asyncio.to_thread(self._scan, content, "OUT", transaction_id)
+        action = self._get_attr(result, "action")
+
+        verbose_proxy_logger.info(
+            "AI Guard verdict: action=%s, txn=%s", action, transaction_id
+        )
+
+        if action and str(action).upper() != "ALLOW":
+            msg = self._build_block_message(result)
+            verbose_proxy_logger.warning("AI Guard BLOCKED (output): %s", msg)
+            raise HTTPException(status_code=403, detail=msg)
+
+        return response
 
 
 proxy_handler_instance = ZscalerAIGuardCallback()

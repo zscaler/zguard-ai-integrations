@@ -1,5 +1,15 @@
 # Zscaler AI Guard Integrations Changelog
 
+## 0.1.1 (March 31, 2026)
+
+### Notes
+
+- Python Versions: **v3.11, v3.12, v3.13**
+
+### Bug Fixes
+
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Fixed LiteLLM and Port Key Documentation to point to official plugin registry pages.
+
 ## 0.1.0 (March 31, 2026)
 
 ### Notes
