@@ -153,7 +153,7 @@ apiproxy/
         └── scan-response.js    # Extract response from Vertex format
 ```
 
-### `deploy.sh` - Automated Deployment Script
+### `deploy.py` - Automated Deployment Script (Python)
 - Creates encrypted KVM with AI Guard credentials
 - Grants Vertex AI permissions if needed
 - Imports and deploys proxy to Apigee
@@ -181,7 +181,7 @@ VERTEX_MODEL="gemini-2.5-flash"
 GOOGLE_APPLICATION_CREDENTIALS="/path/to/sa.json"
 ```
 
-### KVM Entries (Auto-Created by deploy.sh)
+### KVM Entries (Auto-Created by deploy.py)
 
 The deployment script creates an encrypted KVM named `private` with:
 - `aiguard.apikey` - Your AI Guard API key
@@ -256,7 +256,7 @@ Content-Type: application/json
 **Blocked by Prompt Scan (403 Forbidden):**
 ```json
 {
-  "error": "🛡️ ZSCALER AI GUARD: REQUEST BLOCKED",
+  "error": "ZSCALER AI GUARD: REQUEST BLOCKED",
   "severity": "CRITICAL",
   "transaction_id": "abc-123-def-456"
 }
@@ -265,7 +265,7 @@ Content-Type: application/json
 **Blocked by Response Scan (403 Forbidden):**
 ```json
 {
-  "error": "🛡️ ZSCALER AI GUARD: RESPONSE BLOCKED",
+  "error": "ZSCALER AI GUARD: RESPONSE BLOCKED",
   "severity": "HIGH",
   "transaction_id": "ghi-789-jkl-012"
 }
@@ -370,10 +370,10 @@ gcloud projects add-iam-policy-binding $PROJECT \
 apigeecli kvms entries list --org $ORG --env $ENV --name private
 
 # Test AI Guard API directly
-curl -X POST "https://api.us1.zseclipse.net/v1/detection/execute-policy" \
+curl -X POST "https://api.us1.zseclipse.net/v1/detection/resolve-and-execute-policy" \
   -H "Authorization: Bearer $AIGUARD_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"content":"test","direction":"IN","policyId":760}'
+  -d '{"content":"test","direction":"IN"}'
 ```
 
 ### Deployment Failures
@@ -404,7 +404,7 @@ curl -X POST "https://api.us1.zseclipse.net/v1/detection/execute-policy" \
 
 ```bash
 # Make changes to policies or JavaScript
-./deploy.sh  # Redeploy (creates new revision)
+python deploy.py  # Redeploy (creates new revision)
 ```
 
 ### Rollback to Previous Version

@@ -35,3 +35,5 @@ Thumbs.db
 config.json
 !config.example.json
 local_dev
+.windsurf
+.ruff_cache

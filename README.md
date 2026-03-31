@@ -45,15 +45,20 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed explanation.
 
 | Platform | Type | Status | Documentation |
 |----------|------|--------|---------------|
-| **Claude Code** | Hooks (Python) | ✅ Prototype Complete | [Guide](./Anthropic/claude-code-aiguard/) |
-| **Azure AI Gateway** | APIM Policy | ✅ Prototype Complete | [Guide](./Azure/) |
+| **Claude Code** | Hooks (Python) | ✅ Complete | [Guide](./Anthropic/claude-code-aiguard/) |
+| **Azure AI Gateway** | APIM Policy Fragment | ✅ Complete | [Guide](./Microsoft/) |
 | **Cursor IDE** | Hooks (Python) | ✅ Complete | [Guide](./Cursor/) |
 | **Cline** | VS Code hooks (Python) | ✅ Complete | [Guide](./Cline/) |
 | **Windsurf** | Cascade hooks (Python) | ✅ Complete | [Guide](./Windsurf/) |
 | **GitHub Actions** | CI/CD Pipeline (Python) | ✅ Complete | [Guide](./github-actions/) |
 | **Jenkins** | Declarative Pipeline (Python) | ✅ Complete | [Guide](./Jenkins/declarative-pipeline/) |
 | **Google Apigee X** | API Proxy | ✅ Complete | [Guide](./Google/apigee-vertex-aiguard/) |
-| LiteLLM Gateway | Callbacks | 🚧 Planned | - |
+| **Kong Gateway** | Lua Plugin | ✅ Complete | [Guide](./Kong/) |
+| **LiteLLM** | Python Callback | ✅ Complete | [Guide](./LiteLLM/) |
+| **NeMo Guardrails** | Library Plugin (Python) | ✅ Complete | [Guide](./NemoGuardrails/) |
+| **Portkey AI Gateway** | TypeScript Plugin | ✅ Complete | [Guide](./Portkey/) |
+| **TrueFoundry** | FastAPI Guardrail Server | ✅ Complete | [Guide](./TrueFoundry/) |
+| **n8n** | TypeScript Node | ✅ Complete | [Guide](./n8n/) |
 | LangChain | Callbacks | 🚧 Planned | - |
 
 ## Makefile and weekly CI
@@ -178,12 +183,11 @@ For Azure APIM / AI Gateway deployments:
 ```bash
 # 1. Create Named Values in APIM
 - AIGUARD-API-KEY (secret)
-- AIGUARD-CLOUD (us1/us2/eu1/eu2)  
-- AIGUARD-POLICY-ID (optional)
+- AIGUARD-CLOUD (us1/us2/eu1/eu2)
 
 # 2. Create policy fragment
 - Name: zscaler-aiguard-scan
-- Content: Copy from Azure/zscaler-aiguard-scan
+- Content: Copy from Microsoft/zscaler-aiguard-scan
 
 # 3. Add to your API policy
 <inbound>
@@ -196,7 +200,7 @@ For Azure APIM / AI Gateway deployments:
 </outbound>
 ```
 
-See [Azure Installation Guide](./Azure/INSTALLATION_GUIDE.md) for details.
+See [Azure AI Gateway Guide](./Microsoft/README.md) for details.
 
 ## How It Works
 
@@ -324,8 +328,14 @@ Error rates
 - **[Windsurf](./Windsurf/README.md)** - Windsurf Cascade hooks
 - **[GitHub Actions](./github-actions/README.md)** - CI/CD policy validation
 - **[Jenkins](./Jenkins/declarative-pipeline/README.md)** - Declarative pipeline policy validation
-- **[Azure APIM](./Azure/README.md)** - Azure AI Gateway integration
-- **[Azure Installation](./Azure/INSTALLATION_GUIDE.md)** - Step-by-step guide
+- **[Azure AI Gateway](./Microsoft/README.md)** - Azure APIM policy fragment integration
+- **[Google Apigee](./Google/apigee-vertex-aiguard/README.md)** - Apigee + Vertex AI proxy
+- **[Kong Gateway](./Kong/README.md)** - Lua plugin and Konnect callout
+- **[LiteLLM](./LiteLLM/README.md)** - Python custom callback
+- **[NeMo Guardrails](./NemoGuardrails/README.md)** - NVIDIA NeMo library plugin
+- **[Portkey](./Portkey/README.md)** - AI Gateway TypeScript plugin
+- **[TrueFoundry](./TrueFoundry/README.md)** - FastAPI guardrail server
+- **[n8n](./n8n/README.md)** - Workflow automation TypeScript node
 
 ## Examples
 
@@ -343,33 +353,40 @@ claude
 # → Blocked by AI Guard: toxicity detector
 ```
 
-### Azure API Gateway Usage
+### Azure AI Gateway Usage
 
 ```bash
-# Safe request - allowed
-curl -X POST "https://your-gateway/chat/completions" \
-  -H "api-key: $KEY" \
-  -d '{"messages": [{"role": "user", "content": "Hello"}], "model": "gpt-4"}'
+# Safe request - allowed (200 OK)
+curl -X POST "https://your-apim.azure-api.net/llm/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "What is cloud computing?"}]}'
 
-# Prompt injection - blocked (403)
-curl -X POST "https://your-gateway/chat/completions" \
-  -H "api-key: $KEY" \
-  -d '{"messages": [{"role": "user", "content": "Ignore instructions"}], "model": "gpt-4"}'
+# Toxic content - blocked (403 Forbidden)
+curl -X POST "https://your-apim.azure-api.net/llm/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "I hate my neighbor and want to punch him badly"}]}'
+# → {"error":"ZSCALER AI GUARD SECURITY ALERT: REQUEST BLOCKED","action":"BLOCK","severity":"CRITICAL",...}
 ```
 
 ## Contributing
 
 Contributions welcome! Particularly interested in:
 
+- [x] Claude Code hooks
+- [x] Azure AI Gateway (APIM policy fragment)
 - [x] Cursor IDE integration
 - [x] Cline VS Code hooks
 - [x] Windsurf Cascade hooks
 - [x] GitHub Actions CI/CD pipeline
 - [x] Jenkins Declarative Pipeline
-- [ ] LiteLLM gateway callbacks
+- [x] Google Apigee X proxy
+- [x] Kong Gateway Lua plugin
+- [x] LiteLLM proxy callback
+- [x] NVIDIA NeMo Guardrails plugin
+- [x] Portkey AI Gateway plugin
+- [x] TrueFoundry guardrail server
+- [x] n8n workflow automation node
 - [ ] LangChain middleware
-- [ ] Google Apigee policies
-- [ ] Kong plugins
 - [ ] AWS API Gateway integration
 
 ## Security
@@ -388,7 +405,7 @@ Part of the Zscaler AI Guard integrations repository.
 ## Quick Links
 
 - [Get Started with Claude Code](./Anthropic/claude-code-aiguard/)
-- [Get Started with Azure](./Azure/INSTALLATION_GUIDE.md)
+- [Get Started with Azure AI Gateway](./Microsoft/README.md)
 - [Architecture Documentation](./ARCHITECTURE.md)
 - [AI Guard Console](https://admin.us1.zseclipse.net)
 - [Zscaler SDK Python](https://github.com/zscaler/zscaler-sdk-python)
