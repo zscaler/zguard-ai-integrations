@@ -54,9 +54,9 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed explanation.
 | **Jenkins** | Declarative Pipeline (Python) | ✅ Complete | [Guide](./Jenkins/declarative-pipeline/) |
 | **Google Apigee X** | API Proxy | ✅ Complete | [Guide](./Google/apigee-vertex-aiguard/) |
 | **Kong Gateway** | Lua Plugin | ✅ Complete | [Guide](./Kong/) |
-| **LiteLLM** | Python Callback | ✅ Complete | [Guide](./LiteLLM/) |
+| **LiteLLM** | Native Plugin + Python Callback | ✅ Complete | [Guide](./LiteLLM/) · [Official Docs](https://docs.litellm.ai/docs/proxy/guardrails/zscaler_ai_guard) |
 | **NeMo Guardrails** | Library Plugin (Python) | ✅ Complete | [Guide](./NemoGuardrails/) |
-| **Portkey AI Gateway** | TypeScript Plugin | ✅ Complete | [Guide](./Portkey/) |
+| **Portkey AI Gateway** | Native Plugin + SDK Client | ✅ Complete | [Guide](./Portkey/) · [Official Docs](https://portkey.ai/docs/integrations/guardrails/zscaler) |
 | **TrueFoundry** | FastAPI Guardrail Server | ✅ Complete | [Guide](./TrueFoundry/) |
 | **n8n** | TypeScript Node | ✅ Complete | [Guide](./n8n/) |
 | LangChain | Callbacks | 🚧 Planned | - |
@@ -331,9 +331,9 @@ Error rates
 - **[Azure AI Gateway](./Microsoft/README.md)** - Azure APIM policy fragment integration
 - **[Google Apigee](./Google/apigee-vertex-aiguard/README.md)** - Apigee + Vertex AI proxy
 - **[Kong Gateway](./Kong/README.md)** - Lua plugin and Konnect callout
-- **[LiteLLM](./LiteLLM/README.md)** - Python custom callback
+- **[LiteLLM](./LiteLLM/README.md)** - Native plugin ([official docs](https://docs.litellm.ai/docs/proxy/guardrails/zscaler_ai_guard)) + SDK callback
 - **[NeMo Guardrails](./NemoGuardrails/README.md)** - NVIDIA NeMo library plugin
-- **[Portkey](./Portkey/README.md)** - AI Gateway TypeScript plugin
+- **[Portkey](./Portkey/README.md)** - Native plugin ([official docs](https://portkey.ai/docs/integrations/guardrails/zscaler)) + SDK client
 - **[TrueFoundry](./TrueFoundry/README.md)** - FastAPI guardrail server
 - **[n8n](./n8n/README.md)** - Workflow automation TypeScript node
 

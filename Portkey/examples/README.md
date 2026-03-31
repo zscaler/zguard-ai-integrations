@@ -1,6 +1,9 @@
 # Portkey + Zscaler AI Guard — Examples
 
-This directory contains Python scripts for testing the Portkey AI Gateway with Zscaler AI Guard security scanning.
+> **Recommended:** Portkey now includes a native Zscaler AI Guard guardrail — configure it directly in the Portkey SaaS UI with no custom code.
+> See the [official docs](https://portkey.ai/docs/integrations/guardrails/zscaler).
+
+The examples below use the **SDK-based client-side scanning** approach with a self-hosted Portkey gateway.
 
 Each test script follows a three-step flow:
 
