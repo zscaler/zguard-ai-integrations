@@ -1,14 +1,44 @@
 # Zscaler AI Guard Integrations Changelog
 
+## 0.1.2 (April 9, 2026)
+
+### Notes
+
+- Python Versions: **v3.11, v3.12, v3.13**
+
+### Features
+
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Added Anthropic Claude Code Skill integration with on-demand `/aiguard` scanning via `scan.py`
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Added complete AI Guard detector reference (`threat-categories.md`) covering 19 prompt and 21 response detectors
+
+### Enhancements
+
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Enhanced SKILL.md auto-invoke triggers for brand safety, competitor mentions, intellectual property, invisible text, and language/topic policies
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Updated `CLAUDE.md` with Claude Code skill entry, integration patterns, per-integration details, and key files reference
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Fixed Malicious URL detector categorization from Content Moderation to Security in SKILL.md
+
+### Bug Fixes
+
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Fixed `CLAUDE.md` directory reference from `Azure/` to `Microsoft/`
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Removed stale "Planned" entries for Cursor and LiteLLM from `Anthropic/README.md`
+
 ## 0.1.1 (March 31, 2026)
 
 ### Notes
 
 - Python Versions: **v3.11, v3.12, v3.13**
 
+### Enhancements
+
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Added LiteLLM output scanning (`async_post_call_success_hook`) to SDK-based custom callback
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Added LiteLLM native guardrail configuration example (`config-native-guardrail.yaml`)
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Updated root `README.md` with official docs links for LiteLLM and Portkey native integrations
+
 ### Bug Fixes
 
-- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Fixed LiteLLM and Port Key Documentation to point to official plugin registry pages.
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Updated LiteLLM `README.md` with callout to official Zscaler AI Guard plugin page
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Updated Portkey `README.md` with callout to official Zscaler AI Guard integration page
+- [PR #8](https://github.com/zscaler/zguard-ai-integrations/pull/8) - Updated Portkey `examples/README.md` directing users to native plugin as recommended approach
 
 ## 0.1.0 (March 31, 2026)
 
