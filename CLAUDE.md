@@ -9,8 +9,8 @@ Working code, configuration examples, and documentation for deploying Zscaler AI
 ## Structure
 
 ```
-├── Anthropic/          # Claude Code hooks (pre/post scan via hooks system)
-├── Azure/              # Azure API Management policy integration
+├── Anthropic/          # Claude Code hooks (pre/post scan) + Claude Code skill (on-demand /aiguard scanner)
+├── Microsoft/          # Azure API Management policy integration
 ├── Cursor/             # Cursor IDE hooks (beforeSubmitPrompt, beforeMCPExecution, postToolUse, afterAgentResponse)
 ├── Cline/              # Cline VS Code hooks (UserPromptSubmit, PreToolUse, PostToolUse, TaskComplete)
 ├── Windsurf/           # Windsurf Cascade hooks (pre/post prompt, command, MCP, cascade response)
@@ -35,6 +35,7 @@ Working code, configuration examples, and documentation for deploying Zscaler AI
 | TypeScript gateway plugin | TypeScript | n8n, Portkey (native plugin) |
 | FastAPI guardrail server | Python | TrueFoundry |
 | Claude Code hooks | Python | Anthropic |
+| Claude Code skill (on-demand scanner) | Python | Anthropic |
 | Cursor IDE hooks | Python | Cursor |
 | Cline IDE hooks | Python | Cline |
 | Windsurf Cascade hooks | Python | Windsurf |
@@ -45,8 +46,9 @@ Working code, configuration examples, and documentation for deploying Zscaler AI
 
 | Integration | SDK | Docker | Test Scripts | Native Plugin |
 |-------------|:---:|:------:|:------------:|:-------------:|
-| Anthropic | ✅ | — | — | — |
-| Azure | — | — | — | — |
+| Anthropic (hooks) | ✅ | — | — | Python hooks |
+| Anthropic (skill) | ✅ | — | — | Python skill + scan.py |
+| Microsoft (Azure APIM) | — | — | — | Policy fragment |
 | Cursor | ✅ | — | ✅ | Python hooks |
 | Cline | ✅ | — | — | Python hooks |
 | Windsurf | ✅ | — | — | Python hooks |
@@ -124,8 +126,10 @@ test: add validation scripts for [Platform]
 | `README.md` | Integration index and overview |
 | `Makefile` | Local `make test-compile`, policy scans, hook sample scripts |
 | `.github/workflows/weekly-integrations.yml` | Weekly Monday CI: compile + dual policy scan |
+| `.github/workflows/release.yml` | Automatic GitHub releases via Conventional Commits |
 | `CLAUDE.md` | This file — project context for AI agents |
 | `.claude/agents.md` | Sub-agent instructions |
+| `Anthropic/claude-code-skill/references/threat-categories.md` | Complete AI Guard detector reference (19 prompt + 21 response) |
 | `local_dev/` | Development artifacts, plugin staging, internal docs |
 
 ## Upstream Plugin Submissions

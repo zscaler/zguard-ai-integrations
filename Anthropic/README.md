@@ -14,37 +14,56 @@ This repository contains integrations that enable runtime AI security by routing
 
 ## Available Integrations
 
-| Platform | Description | Status |
-|----------|-------------|--------|
-| [Claude Code](./claude-code-aiguard/) | Security hooks for Claude Code CLI | ✅ Available |
-| Cursor IDE | Security hooks for Cursor | 🚧 Planned |
-| LiteLLM | LLM gateway integration | 🚧 Planned |
+| Integration | Type | Description | Status |
+|-------------|------|-------------|--------|
+| [Claude Code Hooks](./claude-code-aiguard/) | Hooks | Automatic pre/post scanning via Claude Code hooks system | ✅ Available |
+| [Claude Code Skill](./claude-code-skill/) | Skill | On-demand scanning via `/aiguard` slash command | ✅ Available |
+
+### Integration Comparison
+
+| Feature | Hooks | Skill |
+|---------|:-----:|:-----:|
+| Automatic scanning | ✅ | Semi (auto-invoke rules) |
+| On-demand scanning | ❌ | ✅ (`/aiguard`) |
+| Pre/Post tool scanning | ✅ | ❌ |
+| Requires separate process | ❌ | ❌ |
+| Uses zscaler-sdk-python | ✅ | ✅ |
 
 ## Quick Start
 
-### Claude Code
+### Option 1: Claude Code Hooks (Automatic Scanning)
 
 ```bash
 # 1. Install SDK
-pip install git+https://github.com/zscaler/zscaler-sdk-python.git
+pip install zscaler-sdk-python
 
 # 2. Copy hooks
 mkdir -p ~/.claude/hooks/aiguard
-cp Anthropic/claude-code-aiguard/hooks/*.py ~/.claude/hooks/aiguard/
+cp claude-code-aiguard/hooks/*.py ~/.claude/hooks/aiguard/
 
-# 3. Configure environment (choose one option)
-
-# Option A: Using .env file (recommended)
-cp Anthropic/claude-code-aiguard/.env.example ~/.claude/hooks/aiguard/.env
-# Edit ~/.claude/hooks/aiguard/.env with your credentials
-
-# Option B: Using shell environment variables
+# 3. Configure environment
 export AIGUARD_API_KEY="your-api-key"
 export AIGUARD_CLOUD="us1"
-export AIGUARD_POLICY_ID="760"
 
 # 4. Configure Claude Code
-cp Anthropic/claude-code-aiguard/settings.json ~/.claude/settings.json
+cp claude-code-aiguard/settings.json ~/.claude/settings.json
+```
+
+### Option 2: Claude Code Skill (On-Demand Scanning)
+
+```bash
+# 1. Install SDK
+pip install zscaler-sdk-python
+
+# 2. Copy skill
+mkdir -p ~/.claude/skills
+cp -r claude-code-skill ~/.claude/skills/aiguard
+
+# 3. Configure environment
+export AIGUARD_API_KEY="your-api-key"
+export AIGUARD_CLOUD="us1"
+
+# 4. Use in Claude Code via /aiguard or by asking Claude to scan content
 ```
 
 ## Architecture
