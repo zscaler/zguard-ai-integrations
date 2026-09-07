@@ -58,6 +58,7 @@ See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for detailed explanation.
 | **AWS Bedrock / Lambda / Strands** | SDK hooks, decorator, agent wrapper (Python) | ✅ Complete | [Guide](./AWS/) |
 | **Kong Gateway** | Lua Plugin | ✅ Complete | [Guide](./Kong/) |
 | **LiteLLM** | Native Plugin + Python Callback | ✅ Complete | [Guide](./LiteLLM/) · [Official Docs](https://docs.litellm.ai/docs/proxy/guardrails/zscaler_ai_guard) |
+| **Bifrost** | Custom Go HTTP transport plugin | ✅ Reference | [Guide](./Bifrost/) |
 | **NeMo Guardrails** | Library Plugin (Python) | ✅ Complete | [Guide](./NemoGuardrails/) |
 | **Portkey AI Gateway** | Native Plugin + SDK Client | ✅ Complete | [Guide](./Portkey/) · [Official Docs](https://portkey.ai/docs/integrations/guardrails/zscaler) |
 | **TrueFoundry** | FastAPI Guardrail Server | ✅ Complete | [Guide](./TrueFoundry/) |
@@ -381,6 +382,7 @@ Error rates
 - **[AWS](./AWS/README.md)** - Bedrock AgentCore, Lambda decorator, boto3 hooks, Strands Agents
 - **[Kong Gateway](./Kong/README.md)** - Lua plugin and Konnect callout
 - **[LiteLLM](./LiteLLM/README.md)** - Native plugin ([official docs](https://docs.litellm.ai/docs/proxy/guardrails/zscaler_ai_guard)) + SDK callback
+- **[Bifrost](./Bifrost/README.md)** - Custom Go HTTP transport plugin reference
 - **[NeMo Guardrails](./NemoGuardrails/README.md)** - NVIDIA NeMo library plugin
 - **[Portkey](./Portkey/README.md)** - Native plugin ([official docs](https://portkey.ai/docs/integrations/guardrails/zscaler)) + SDK client
 - **[TrueFoundry](./TrueFoundry/README.md)** - FastAPI guardrail server
@@ -433,6 +435,7 @@ Contributions welcome! Particularly interested in:
 - [x] AWS Bedrock, Lambda and Strands Agents
 - [x] Kong Gateway Lua plugin
 - [x] LiteLLM proxy callback
+- [x] Bifrost custom HTTP transport reference
 - [x] NVIDIA NeMo Guardrails plugin
 - [x] Portkey AI Gateway plugin
 - [x] TrueFoundry guardrail server
