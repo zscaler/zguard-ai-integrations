@@ -8,7 +8,6 @@ Usage:
     python test_input.py "I hate my neighbor"
 """
 
-import json
 import os
 import sys
 
@@ -50,24 +49,21 @@ def main():
 
     if resp.status_code == 200:
         body = resp.json()
-        if body is None:
+        if body.get("verdict", True):
             print("Result: ALLOWED (no issues detected)")
         else:
-            print(f"Result: {json.dumps(body, indent=2)}")
-    elif resp.status_code == 400:
-        detail = resp.json().get("detail", {})
-        print("Result: BLOCKED by AI Guard")
-        print(f"  Action:      {detail.get('action')}")
-        print(f"  Severity:    {detail.get('severity')}")
-        print(f"  Policy:      {detail.get('policy_name')} (ID: {detail.get('policy_id')})")
-        print(f"  Transaction: {detail.get('transaction_id')}")
-        if detail.get("blocking_detectors"):
-            print(f"  Blocking:    {', '.join(detail['blocking_detectors'])}")
-        if detail.get("detectors"):
-            print("  Detectors:")
-            for name, info in detail["detectors"].items():
-                flag = " << BLOCKING" if str(info.get("action", "")).upper() == "BLOCK" else ""
-                print(f"    - {name}: triggered={info.get('triggered')}, action={info.get('action')}{flag}")
+            print("Result: BLOCKED by AI Guard")
+            print(f"  Action:      {body.get('action')}")
+            print(f"  Severity:    {body.get('severity')}")
+            print(f"  Policy:      {body.get('policy_name')} (ID: {body.get('policy_id')})")
+            print(f"  Transaction: {body.get('transaction_id')}")
+            if body.get("blocking_detectors"):
+                print(f"  Blocking:    {', '.join(body['blocking_detectors'])}")
+            if body.get("detectors"):
+                print("  Detectors:")
+                for name, info in body["detectors"].items():
+                    flag = " << BLOCKING" if str(info.get("action", "")).upper() == "BLOCK" else ""
+                    print(f"    - {name}: triggered={info.get('triggered')}, action={info.get('action')}{flag}")
     else:
         print(f"Error: {resp.text}")
 

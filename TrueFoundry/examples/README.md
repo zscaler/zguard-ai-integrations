@@ -39,7 +39,7 @@ python test_output.py "Here is your password: abc123"
 Prompt: I hate my neighbor
 Endpoint: http://localhost:8000/input-scan
 
-Status: 400
+Status: 200
 Result: BLOCKED by AI Guard
   Action:      BLOCK
   Severity:    CRITICAL
