@@ -293,14 +293,7 @@ def _build_block_detail(result, direction: str, transaction_id: str) -> dict:
             blocking.append(name)
 
     return {
-        # TrueFoundry only surfaces `message` (logs/UI) from this body — the
-        # other fields below are ignored by TrueFoundry itself and exist for
-        # our own test scripts, so anything worth seeing in TrueFoundry's own
-        # UI/traces has to be folded into this string.
-        "message": (
-            f"Blocked by Zscaler AI Guard: policy={policy_name} severity={severity} "
-            f"blocking={', '.join(blocking) if blocking else 'unknown'}"
-        ),
+        "message": "Request blocked by Zscaler AI Guard",
         "action": action,
         "severity": severity,
         "direction": direction,
