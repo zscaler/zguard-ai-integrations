@@ -14,7 +14,7 @@ import logging
 import os
 import uuid
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional
 
@@ -316,9 +316,10 @@ def input_scan(request: InputGuardrailRequest):
     TrueFoundry input guardrail endpoint.
     Scans the user's prompt before it reaches the LLM.
 
-    Returns:
-      - null (None) if the content is allowed
-      - HTTP 400 with detail if the content is blocked
+    Always returns HTTP 200; the policy decision is carried in the body's
+    `verdict` field, not the status code. TrueFoundry treats a non-2xx as the
+    guardrail itself failing (not a denial) — under "Enforce But Ignore On
+    Error" or "Audit" that would silently let a real AI Guard BLOCK through.
     """
     logger.debug("/input-scan received: context=%s", _describe_context(request.context))
 
@@ -327,7 +328,7 @@ def input_scan(request: InputGuardrailRequest):
         # No user turn to scan, so nothing reaches AI Guard and no event is
         # recorded — worth saying, or it looks like a dropped request.
         logger.debug("/input-scan: no user message found, skipping scan")
-        return None
+        return {"verdict": True}
 
     txn_id = str(uuid.uuid4())
     result = _scan(content, "IN", txn_id, user=_extract_user(request.context))
@@ -335,10 +336,10 @@ def input_scan(request: InputGuardrailRequest):
     if _is_blocked(result):
         detail = _build_block_detail(result, "IN", txn_id)
         logger.info("/input-scan BLOCKED: %s", detail)
-        raise HTTPException(status_code=400, detail=detail)
+        return {"verdict": False, **detail}
 
     logger.debug("/input-scan ALLOWED: transactionId=%s", txn_id)
-    return None
+    return {"verdict": True}
 
 
 @app.post("/output-scan")
@@ -347,16 +348,15 @@ def output_scan(request: OutputGuardrailRequest):
     TrueFoundry output guardrail endpoint.
     Scans the LLM response before it is returned to the user.
 
-    Returns:
-      - null (None) if the content is allowed
-      - HTTP 400 with detail if the content is blocked
+    Always returns HTTP 200; the policy decision is carried in the body's
+    `verdict` field, not the status code. See input_scan for why.
     """
     logger.debug("/output-scan received: context=%s", _describe_context(request.context))
 
     content = _extract_assistant_response(request.responseBody)
     if not content:
         logger.debug("/output-scan: no assistant content found, skipping scan")
-        return None
+        return {"verdict": True}
 
     txn_id = str(uuid.uuid4())
     result = _scan(content, "OUT", txn_id, user=_extract_user(request.context))
@@ -364,10 +364,10 @@ def output_scan(request: OutputGuardrailRequest):
     if _is_blocked(result):
         detail = _build_block_detail(result, "OUT", txn_id)
         logger.info("/output-scan BLOCKED: %s", detail)
-        raise HTTPException(status_code=400, detail=detail)
+        return {"verdict": False, **detail}
 
     logger.debug("/output-scan ALLOWED: transactionId=%s", txn_id)
-    return None
+    return {"verdict": True}
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 fastapi
 uvicorn
-zscaler-sdk-python>=1.9.44
+zscaler-sdk-python>=1.10.0
 requests
 python-dotenv
