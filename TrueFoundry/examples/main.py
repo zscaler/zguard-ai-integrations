@@ -35,6 +35,21 @@ logger.setLevel(os.environ.get("AIGUARD_LOG_LEVEL", "INFO").upper())
 CLOUD = os.environ.get("AIGUARD_CLOUD", "us1")
 client = LegacyZGuardClientHelper(cloud=CLOUD)
 
+# The conversation ID travels as a custom request header. AI Guard only records it
+# if the tenant lists this header in `headerNames` and names it in
+# `conversationIdHeaderName`, so the name has to match that tenant's config.
+CONVERSATION_ID_HEADER = os.environ.get("AIGUARD_CONVERSATION_ID_HEADER", "X-Conversation-Id")
+
+# Which `context.metadata` key the calling application puts the conversation ID
+# in. Optional: when unset, the names below are tried in order.
+CONVERSATION_ID_METADATA_KEY = os.environ.get("AIGUARD_CONVERSATION_ID_METADATA_KEY", "")
+
+# Keys seen carrying the conversation ID, tried after any configured key.
+# `session_id` is last because a session can span several conversations.
+# `message_id` is absent entirely: it changes every turn, so using it would
+# split one conversation into many.
+CONVERSATION_ID_METADATA_FALLBACKS = ("conversation_id", "chat_id", "session_id")
+
 # The cloud decides which AI Guard the key is presented to, and it defaults to
 # production. A stage key against the default cloud authenticates nowhere, so
 # make the target explicit at startup rather than leaving it to be inferred.
@@ -258,21 +273,71 @@ def _extract_user(context: Optional[RequestContext]) -> Optional[str]:
     return None
 
 
-def _scan(content: str, direction: str, transaction_id: str, user: Optional[str] = None):
+def _extract_conversation_id(context: Optional[RequestContext]) -> Optional[str]:
+    """Best-effort conversation ID from the TrueFoundry request context.
+
+    Turns of one conversation share this value while each scan keeps its own
+    transaction ID, which is what groups them on the dashboard. No key is
+    guaranteed — the value is whatever the calling application puts in its
+    metadata — so a configured key is tried first, then the names seen in
+    practice, in request metadata before the subject's.
+    """
+    if context is None:
+        return None
+
+    request_metadata = context.metadata or {}
+    subject = context.user
+    subject_metadata = (subject.metadata if subject is not None else None) or {}
+
+    keys = []
+    for key in (CONVERSATION_ID_METADATA_KEY, *CONVERSATION_ID_METADATA_FALLBACKS):
+        if key and key not in keys:
+            keys.append(key)
+
+    candidates = [(f"metadata.{k}", request_metadata.get(k)) for k in keys]
+    candidates += [(f"user.metadata.{k}", subject_metadata.get(k)) for k in keys]
+
+    for source, value in candidates:
+        if value:
+            logger.info("conversation id resolved: source=%s value=%s", source, value)
+            return str(value)
+
+    logger.info(
+        "no conversation id in request context "
+        "(triedKeys=%s metadataKeys=%s userMetadataKeys=%s)",
+        keys,
+        sorted(request_metadata.keys()),
+        sorted(subject_metadata.keys()),
+    )
+    return None
+
+
+def _scan(
+    content: str,
+    direction: str,
+    transaction_id: str,
+    user: Optional[str] = None,
+    conversation_id: Optional[str] = None,
+):
     # Log the content *length*, never the content: prompts are customer data.
     logger.debug(
-        "calling AI Guard: direction=%s transactionId=%s contentLength=%d user=%s",
+        "calling AI Guard: direction=%s transactionId=%s contentLength=%d user=%s "
+        "conversationId=%s",
         direction,
         transaction_id,
         len(content),
         user if user is not None else "<none>",
+        conversation_id if conversation_id is not None else "<none>",
     )
+
+    headers = {CONVERSATION_ID_HEADER: conversation_id} if conversation_id else None
 
     result, response, error = client.policy_detection.resolve_and_execute_policy(
         content=content,
         direction=direction,
         transaction_id=transaction_id,
         user=user,
+        headers=headers,
     )
 
     # Logged after the call returns, so it is evidence the SDK accepted the
@@ -383,7 +448,13 @@ def input_scan(request: InputGuardrailRequest):
         return {"verdict": True}
 
     txn_id = str(uuid.uuid4())
-    result = _scan(content, "IN", txn_id, user=_extract_user(request.context))
+    result = _scan(
+        content,
+        "IN",
+        txn_id,
+        user=_extract_user(request.context),
+        conversation_id=_extract_conversation_id(request.context),
+    )
 
     if _is_blocked(result):
         detail = _build_block_detail(result, "IN", txn_id)
@@ -411,7 +482,13 @@ def output_scan(request: OutputGuardrailRequest):
         return {"verdict": True}
 
     txn_id = str(uuid.uuid4())
-    result = _scan(content, "OUT", txn_id, user=_extract_user(request.context))
+    result = _scan(
+        content,
+        "OUT",
+        txn_id,
+        user=_extract_user(request.context),
+        conversation_id=_extract_conversation_id(request.context),
+    )
 
     if _is_blocked(result):
         detail = _build_block_detail(result, "OUT", txn_id)
