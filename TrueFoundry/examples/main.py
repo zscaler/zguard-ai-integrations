@@ -89,24 +89,76 @@ def _get_attr(obj, name, default=None):
     return getattr(obj, name, default)
 
 
+#: API surfaces the gateway fronts; each lays its payload out differently.
+CHAT_COMPLETIONS = "chat_completions"
+RESPONSES = "responses"
+
+
+def _request_surface(request_body: dict) -> Optional[str]:
+    """Identify the surface from the key carrying the turns.
+
+    The payload has no route field, and `model` does not imply a surface.
+    """
+    if isinstance(request_body.get("messages"), list):
+        return CHAT_COMPLETIONS
+    if isinstance(request_body.get("input"), list):
+        return RESPONSES
+    return None
+
+
+def _response_surface(response_body: dict) -> Optional[str]:
+    """Identify the surface from the key carrying the response."""
+    if isinstance(response_body.get("choices"), list):
+        return CHAT_COMPLETIONS
+    if isinstance(response_body.get("output"), list):
+        return RESPONSES
+    return None
+
+
 def _extract_last_user_message(request_body: dict) -> str:
-    messages = request_body.get("messages", [])
-    for msg in reversed(messages):
+    surface = _request_surface(request_body)
+
+    if surface == CHAT_COMPLETIONS:
+        turns = request_body["messages"]
+        text_part_type = "text"
+    elif surface == RESPONSES:
+        turns = request_body["input"]
+        text_part_type = "input_text"
+    else:
+        return ""
+
+    for msg in reversed(turns):
         if msg.get("role") == "user":
             content = msg.get("content", "")
             if isinstance(content, list):
                 return " ".join(
                     p.get("text", "") for p in content
-                    if isinstance(p, dict) and p.get("type") == "text"
+                    if isinstance(p, dict) and p.get("type") == text_part_type
                 )
             return str(content)
     return ""
 
 
 def _extract_assistant_response(response_body: dict) -> str:
-    choices = response_body.get("choices", [])
-    if choices:
-        return choices[0].get("message", {}).get("content", "")
+    surface = _response_surface(response_body)
+
+    if surface == CHAT_COMPLETIONS:
+        choices = response_body["choices"]
+        if choices:
+            return choices[0].get("message", {}).get("content", "")
+        return ""
+
+    if surface == RESPONSES:
+        # `output` interleaves reasoning and tool-call items, so select the
+        # assistant turn by type; `output[0]` is often a `reasoning` item.
+        for item in response_body["output"]:
+            if item.get("type") == "message" and item.get("role") == "assistant":
+                return " ".join(
+                    p.get("text", "") for p in item.get("content", [])
+                    if isinstance(p, dict) and p.get("type") == "output_text"
+                )
+        return ""
+
     return ""
 
 
