@@ -107,6 +107,7 @@ Set any flow variable you want to override before the callout — for example an
 | `aiguardPolicyId` | unset | pin one policy — see the warning |
 | `failOpen` | `false` | allow when a scan cannot complete |
 | `blockStatus` | `native` | `native` keeps the caller's 200-shaped envelope; a number forces that status |
+| `aiguardUser` | — | end-user identity sent with each scan, for dashboard attribution — set it from a verified identity |
 | `appName` | `Gateway` | label in this gateway's logs |
 | `agentId` / `agentVersion` | — | optional identifiers for logs |
 | `scanTools` | `true` | fold tool results into scans |

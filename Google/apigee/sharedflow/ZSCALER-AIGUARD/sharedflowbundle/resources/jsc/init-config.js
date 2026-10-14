@@ -16,6 +16,7 @@
  *   aiguardPolicyId ......... pin one policy id — normally leave unset
  *   scanTools ............... "true"/"false" — fold tool results into scans (default true)
  *   failOpen ................ "true"/"false" — allow on scan failure (default false)
+ *   aiguardUser ............. end-user identity sent with the scan (e.g. an email)
  *   appName ................. application label for logs (default "Gateway")
  *   agentId / agentVersion .. optional agent identifiers for logs
  *   aiguardDescriptions ..... JSON string of custom detector descriptions
@@ -80,10 +81,17 @@ context.setVariable('aiguard.cfg.failClosedOnUnknown',
 // blocks are visible in status-code metrics.
 context.setVariable('aiguard.cfg.blockStatus', cfg('blockStatus', 'native'));
 
+/* ---- end-user identity --------------------------------------------------- *
+ * Sent with the scan as `user`, so detections are attributed to a person on the
+ * AI Guard dashboard. The gateway cannot know who that is on its own: the proxy
+ * sets aiguardUser from the identity its own auth established, such as a
+ * verified JWT claim. A client-supplied header is a weaker source, since a
+ * caller can put any name in it.
+ */
+context.setVariable('aiguard.cfg.user', cfg('aiguardUser', ''));
+
 /* ---- labels & agent identifiers ------------------------------------------ *
- * The detection API accepts content, direction, transactionId and policyId only
- * -- it carries no metadata field -- so these identify the caller in this
- * gateway's own logs, not in the scan record.
+ * These identify the caller in this gateway's own logs, not in the scan record.
  */
 context.setVariable('aiguard.cfg.appName', cfg('appName', 'Gateway'));
 

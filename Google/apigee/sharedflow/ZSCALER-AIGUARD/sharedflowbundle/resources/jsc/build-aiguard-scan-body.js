@@ -6,17 +6,18 @@
  * it as a string (aiguardScanRequestBody) that AM-SetAIGuardScanRequest drops
  * into the ServiceCallout payload verbatim. JSON.stringify handles escaping.
  *
- * The API accepts four fields and no more:
+ * The fields sent:
  *
  *     content        the text to scan
  *     direction      "IN"  for prompts and tool arguments
  *                    "OUT" for model responses and tool results
  *     transactionId  optional, must be a 36-character UUID
  *     policyId       optional; present only when a policy id is pinned
+ *     user           optional end-user identity, from aiguardUser
  *
- * There is no metadata field, so app name, user, model and agent identifiers
- * stay in this gateway's logs rather than riding along with the scan. The
- * transaction id is what joins a log line to the record in the AI Guard Console.
+ * App name, model and agent identifiers are not sent; they stay in this
+ * gateway's logs. The transaction id is what joins a log line to the record in
+ * the AI Guard Console.
  */
 
 var apiType = context.getVariable('aiguard.apiType');
@@ -71,6 +72,10 @@ var policyId = context.getVariable('aiguard.cfg.policyId');
 if (!aiguardIsBlank(policyId)) {
     // Present only when pinned; its presence also selects the execute-policy path.
     body.policyId = parseInt(policyId, 10);
+}
+var user = context.getVariable('aiguard.cfg.user');
+if (!aiguardIsBlank(user)) {
+    body.user = String(user);
 }
 
 context.setVariable('aiguardScanRequestBody', JSON.stringify(body));
