@@ -37,6 +37,13 @@ if (policyId && policyId.length > 0) {
   payload.policyId = parseInt(policyId);
 }
 
+// End-user identity, attributed to the detection on the AI Guard dashboard. Set
+// aiguardUser in a step before this one, from the caller's verified identity.
+var user = context.getVariable('aiguardUser') || '';
+if (user.length > 0) {
+  payload.user = String(user);
+}
+
 // Store variables for use in next policies
 context.setVariable('aiguard.request.payload', JSON.stringify(payload));
 context.setVariable('ai.prompt', prompt);

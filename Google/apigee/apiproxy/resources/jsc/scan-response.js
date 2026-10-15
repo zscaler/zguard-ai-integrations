@@ -35,6 +35,12 @@ if (policyId && policyId.length > 0) {
   payload.policyId = parseInt(policyId);
 }
 
+// Same end-user identity as the prompt scan — see scan-prompt.js.
+var user = context.getVariable('aiguardUser') || '';
+if (user.length > 0) {
+  payload.user = String(user);
+}
+
 // Store variables
 context.setVariable('aiguard.scan.response.payload', JSON.stringify(payload));
 context.setVariable('ai.response', responseText);
